@@ -101,6 +101,26 @@ class TaskService
         $user->notify(new TaskAssignedNotification($data));
     }
 
+    public function getTaskViewData(Project $project, Task $task)
+    {
+        $members = $project->workspace->users()->wherePivot("role", "<>", "owner")->get();
+        $task->load([
+            'users',
+            'attachments.user',
+            'comments' => function ($query) {
+                $query->whereNull('parent_id')->with([
+                    'user',
+                    'attachments',
+                    'replyComments' => function ($replyQuery) {
+                        $replyQuery->with('user', 'attachments')->orderBy('created_at', 'asc');
+                    }
+                ])->orderBy('created_at', 'desc');
+            }
+        ]);
+
+        return compact('project', 'task', 'members');
+    }
+
     protected function uploadFile($file, $task_id)
     {
 

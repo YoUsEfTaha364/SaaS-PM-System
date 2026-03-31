@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\TaskRequest;
 use App\Models\Project;
 use App\Models\Task;
 use App\Models\User;
@@ -30,26 +31,15 @@ class TaskController extends Controller
 
         return view('tasks.index', compact('tasks', 'workspaces'));
     }
-    public function store(Request $request, Project $project)
+    public function store(TaskRequest $request, Project $project)
     {
 
-        Gate::authorize("manageWorkspace", $project->workspace);
+            Gate::authorize("manageWorkspace", $project->workspace);
 
-        $validated = $request->validate([
-            "title" => ["required", "string", "max:255"],
-            "description" => ["nullable", "string", "max:255"],
-            "due_date" => ["date", "nullable"],
-            'files' => ['nullable', 'array'],
-            'files.*' => [
-                'file',
-                'mimes:pdf,jpg,jpeg,png,zip,doc,docx,xlsx',
-                'max:10240',
-            ],
-        ]);
+        $validated = $request->validated();
 
-        $this->task_service->storeTask($validated,$project);
+        $this->task_service->storeTask($validated, $project);
 
-      
         return redirect()->back()->with("add-task", "task added successfully");
     }
 
@@ -96,20 +86,8 @@ class TaskController extends Controller
 
     public function view(Project $project, Task $task)
     {
-        $members = $project->workspace->users()->wherePivot("role", "<>", "owner")->get();
-        $task->load([
-            'users',
-            'attachments.user',
-            'comments' => function ($query) {
-                $query->whereNull('parent_id')->with([
-                    'user',
-                    'attachments',
-                    'replyComments' => function ($replyQuery) {
-                        $replyQuery->with('user', 'attachments')->orderBy('created_at', 'asc');
-                    }
-                ])->orderBy('created_at', 'desc');
-            }
-        ]);
-        return view("tasks.show", get_defined_vars());
+        $data = $this->task_service->getTaskViewData($project, $task);
+        
+        return view("tasks.show", $data);
     }
 }

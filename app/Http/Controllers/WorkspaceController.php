@@ -4,52 +4,38 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\createWorkspaceRequest;
 use App\Models\Workspace;
+use App\Services\WorkspaceService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class WorkspaceController extends Controller
 {
+    protected $workspaceService;
+
+    public function __construct(WorkspaceService $workspaceService)
+    {
+        $this->workspaceService = $workspaceService;
+    }
+
     public function index()
     {
-        $user = Auth::user();
-        $workspaces = $user->workspaces()
-            ->with(['owner', 'projects', 'users'])
-            ->withCount(['projects', 'users'])
-            ->orderBy('updated_at', 'desc')
-            ->get();
-            
+        $workspaces = $this->workspaceService->getWorkspacesData();
+
         return view('workspaces.index', compact('workspaces'));
     }
 
-    public function create(){
-      return view("workspaces.create");
+    public function create()
+    {
+        return view("workspaces.create");
     }
 
+    public function store(createWorkspaceRequest $request)
+    {
+        $validated = $request->validated();
 
-    
-    public function store(createWorkspaceRequest $request){
+        $this->workspaceService->storeWorkspace($validated);
 
-      $validated=$request->validated();
-
-
-     // create workspace
-
-
-     $workspace=Workspace::create([
-        "name"=>$validated["name"],
-        "owner_id"=>Auth::user()->id,
-     ]);
-
-
-     // create workspace_user with role owner
-
-         $workspace->users()->attach(Auth::user()->id,[
-        "role"=>"owner"
-     ]);
-
-
-       
-       return redirect()->back()->with("create-workspace","workspace created successfully");
+        return redirect()->back()->with("create-workspace", "workspace created successfully");
     }
 
 
@@ -59,9 +45,7 @@ class WorkspaceController extends Controller
             abort(403);
         }
 
-        $workspace->load(['owner', 'users', 'projects' => function ($query) {
-            $query->withCount('tasks');
-        }]);
+        $workspace = $this->workspaceService->getWorkspaceViewData($workspace);
 
         return view('workspaces.show', compact('workspace'));
     }
