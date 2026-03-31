@@ -78,7 +78,7 @@
 @push('modals')
     <!-- Add Task Modal -->
     <x-modal name="addTask" title="Create New Task">
-        <form method="POST" action="{{ route('projects.tasks.store', $project) }}">
+        <form method="POST" action="{{ route('projects.tasks.store', $project) }}" enctype="multipart/form-data">
             @csrf
             <div>
                 <x-input-label for="title" value="Task Title" />
@@ -91,6 +91,10 @@
             <div class="mt-4">
                 <x-input-label for="due_date" value="Due Date" />
                 <x-text-input id="due_date" name="due_date" class="block mt-1 w-full" type="date" />
+            </div>
+            <div class="mt-4">
+                <x-input-label for="files" value="Attachments" />
+                <x-text-input id="files" name="files[]" class="block mt-1 w-full" type="file" multiple />
             </div>
             <div class="mt-6 flex justify-end">
                 <x-secondary-button @click="closeModal()">Cancel</x-secondary-button>

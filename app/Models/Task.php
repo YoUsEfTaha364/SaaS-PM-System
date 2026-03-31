@@ -18,6 +18,6 @@ class Task extends Model
         return $this->hasmany(Comment::class);
     }
     public function attachments(){
-        return $this->hasmany(Attachment::class);
+        return $this->morphMany(Attachment::class,"attachable");
     }
 }

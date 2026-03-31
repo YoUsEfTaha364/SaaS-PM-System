@@ -56,6 +56,31 @@
                     </div>
                 </div>
 
+                <!-- Attachments -->
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">Attachments</h3>
+                    <div class="space-y-4">
+                        @forelse ($task->attachments as $file)
+                            <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                                <div class="flex items-center gap-4">
+                                    <svg class="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                                    <div>
+                                        <a href="{{ asset("storage/attachments/".$file->file_path) }}" target="_blank" class="text-sm font-medium text-indigo-600 hover:underline">{{ $file->file_name }}</a>
+                                        <p class="text-xs text-gray-500">
+                                            Uploaded by {{ $file->user->name ?? 'Unknown' }} &middot; {{ round($file->size / 1024, 1) }} KB
+                                        </p>
+                                    </div>
+                                </div>
+                                <a href="{{ route("attachments.download",$file)}}" class="text-gray-400 hover:text-gray-600" title="Download">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                                </a>
+                            </div>
+                        @empty
+                            <p class="text-sm text-gray-500 italic">No attachments for this task.</p>
+                        @endforelse
+                    </div>
+                </div>
+
                 <!-- Comments -->
                 <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8">
                     <div class="flex justify-between items-center mb-6">
@@ -67,11 +92,12 @@
                         </button>
                     </div>
 
-                    <form method="POST" action="{{ route('tasks.comments.store', $task) }}" id="commentForm" class="hidden mb-8 transition-all">
+                    <form method="POST" action="{{ route('tasks.comments.store', $task) }}" id="commentForm" class="hidden mb-8 transition-all" enctype="multipart/form-data">
                         @csrf
                         <textarea name="content" rows="4" placeholder="Write a comment..."
                             class="w-full border-gray-200 rounded-xl shadow-sm px-4 py-3 text-sm focus:ring-indigo-500 focus:border-indigo-500 transition"></textarea>
-                        <div class="mt-3 flex justify-end">
+                        <div class="mt-3 flex items-center justify-between">
+                            <input type="file" name="files[]" multiple class="text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 transition-colors" />
                             <button class="bg-indigo-600 text-white px-5 py-2 text-sm font-semibold rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors">
                                 Post Comment
                             </button>
@@ -79,8 +105,97 @@
                     </form>
 
                     <div class="space-y-6">
-                        @forelse ($task->comments->whereNull("parent_id")->sortByDesc('created_at') as $comment)
-                            <x-comment :comment="$comment" />
+                        @forelse ($task->comments as $comment)
+                            <div class="flex items-start gap-4">
+                                <div class="w-8 h-8 rounded-full bg-gray-200 text-gray-600 text-xs flex items-center justify-center font-bold flex-shrink-0 mt-1">
+                                    {{ strtoupper(substr($comment->user->name, 0, 2)) }}
+                                </div>
+                                <div class="flex-1">
+                                    <div class="flex items-baseline justify-between">
+                                        <div>
+                                            <span class="font-semibold text-gray-800 text-sm">{{ $comment->user->name }}</span>
+                                            <span class="text-xs text-gray-500 ml-2">{{ $comment->created_at->diffForHumans() }}</span>
+                                        </div>
+                                    </div>
+                                    <div class="prose prose-sm max-w-none text-gray-600 mt-1">
+                                        {!! nl2br(e($comment->content)) !!}
+                                    </div>
+
+                                    @if($comment->attachments->count() > 0)
+                                    <div class="mt-3 space-y-2">
+                                        @foreach ($comment->attachments as $file)
+                                        <div class="flex items-center gap-3 px-3 py-2 bg-gray-50 rounded-lg">
+                                            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.414a4 4 0 00-5.656-5.656l-6.415 6.415a6 6 0 108.486 8.486L20 13"></path></svg>
+                                            <a href="{{ asset("storage/attachments/".$file->file_path) }}" target="_blank" class="text-sm font-medium text-indigo-600 hover:underline">{{ $file->file_name }}</a>
+                                            <span class="text-xs text-gray-500">({{ round($file->size / 1024, 1) }} KB)</span>
+                                            <a href="{{ route("attachments.download", $file) }}" class="ml-auto text-gray-400 hover:text-gray-600" title="Download">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                                            </a>
+                                        </div>
+                                        @endforeach
+                                    </div>
+                                    @endif
+
+                                    <!-- Reply Button & Nested Form -->
+                                    <div class="mt-3">
+                                        <button type="button" onclick="document.getElementById('replyForm-{{ $comment->id }}').classList.toggle('hidden')" 
+                                            class="text-xs font-semibold text-gray-500 hover:text-indigo-600 transition-colors">
+                                            Reply
+                                        </button>
+                                        
+                                        <form method="POST" action="{{ route('tasks.comments.replies.store',[ $task,$comment]) }}" id="replyForm-{{ $comment->id }}" class="hidden mt-3 transition-all" enctype="multipart/form-data">
+                                            @csrf
+                                         
+                                            <textarea name="content" rows="2" placeholder="Write a reply..."
+                                                class="w-full border-gray-200 rounded-xl shadow-sm px-4 py-2 text-sm focus:ring-indigo-500 focus:border-indigo-500 transition"></textarea>
+
+                                                <input type="file" name="files[]" multiple class="text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 transition-colors" />
+                                            <div class="mt-2 flex justify-end">
+                                                <button type="submit" class="bg-indigo-600 text-white px-4 py-1.5 text-xs font-semibold rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors">Post Reply</button>
+                                            </div>
+                                        </form>
+                                    </div>
+
+                                    <!-- Replies -->
+                                    @if ($comment->replyComments->count() > 0)
+                                        <div class="mt-6 pl-8 border-l-2 border-gray-100 space-y-5">
+                                            @foreach ($comment->replyComments as $reply)
+                                                <div class="flex items-start gap-4">
+                                                    <div class="w-8 h-8 rounded-full bg-gray-200 text-gray-600 text-xs flex items-center justify-center font-bold flex-shrink-0 mt-1">
+                                                        {{ strtoupper(substr($reply->user->name, 0, 2)) }}
+                                                    </div>
+                                                    <div class="flex-1">
+                                                        <div class="flex items-baseline justify-between">
+                                                            <div>
+                                                                <span class="font-semibold text-gray-800 text-sm">{{ $reply->user->name }}</span>
+                                                                <span class="text-xs text-gray-500 ml-2">{{ $reply->created_at->diffForHumans() }}</span>
+                                                            </div>
+                                                        </div>
+                                                        <div class="prose prose-sm max-w-none text-gray-600 mt-1">
+                                                            {!! nl2br(e($reply->content)) !!}
+                                                        </div>
+
+                                                        @if($reply->attachments->count() > 0)
+                                                        <div class="mt-3 space-y-2">
+                                                            @foreach ($reply->attachments as $file)
+                                                            <div class="flex items-center gap-3 px-3 py-2 bg-gray-50 rounded-lg">
+                                                                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.414a4 4 0 00-5.656-5.656l-6.415 6.415a6 6 0 108.486 8.486L20 13"></path></svg>
+                                                                <a href="{{ asset("storage/attachments/".$file->file_path) }}" target="_blank" class="text-sm font-medium text-indigo-600 hover:underline">{{ $file->file_name }}</a>
+                                                                <span class="text-xs text-gray-500">({{ round($file->size / 1024, 1) }} KB)</span>
+                                                                <a href="{{ route("attachments.download", $file) }}" class="ml-auto text-gray-400 hover:text-gray-600" title="Download">
+                                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                                                                </a>
+                                                            </div>
+                                                            @endforeach
+                                                        </div>
+                                                        @endif
+                                                    </div>
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    @endif
+                                </div>
+                            </div>
                         @empty
                             <div class="text-center py-8">
                                 <svg class="w-12 h-12 mx-auto text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>

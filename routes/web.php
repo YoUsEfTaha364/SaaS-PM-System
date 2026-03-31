@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AttachmentController;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\NotificationController;
@@ -99,6 +100,11 @@ Route::controller(TaskController::class)->middleware("auth")->group(function () 
 
   Route::post("{task}/comments","store")->name("store");
   Route::post("{task}/comments/{comment}/replies","storeReplyComment")->name("replies.store");
+
+  });
+  Route::controller(AttachmentController::class)->prefix("attachments/")->name("attachments.")->middleware("auth")->group(function(){
+
+    Route::get("download/{attachment}","download")->name("download");
 
   });
 

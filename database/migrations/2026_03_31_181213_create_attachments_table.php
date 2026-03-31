@@ -15,9 +15,10 @@ return new class extends Migration
             $table->id();
             $table->string("file_name");
             $table->string("file_path");
-            $table->foreignId("task_id")->references("id")->on("tasks")->cascadeOnDelete();
-            $table->foreignId("aploaded_by")->references("id")->on("users")->cascadeOnDelete();
-            $table->float("size")->nullable();
+            $table->float("size");
+            $table->foreignId("uploaded_by")->references("id")->on("users")->cascadeOnDelete();
+            $table->integer("attachable_id");
+            $table->string("attachable_type");
             $table->timestamps();
         });
     }
