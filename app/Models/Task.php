@@ -20,4 +20,9 @@ class Task extends Model
     public function attachments(){
         return $this->morphMany(Attachment::class,"attachable");
     }
+
+     public function activities(){
+        return $this->hasMany(TaskActivity::class);
+    }
+
 }

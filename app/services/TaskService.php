@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Attachment;
 use App\Models\Project;
 use App\Models\Task;
+use App\Models\TaskActivity;
 use App\Models\User;
 use App\Notifications\ChnageStatusNotification;
 use App\Notifications\TaskAssignedNotification;
@@ -31,6 +32,16 @@ class TaskService
                     "due_date" => $validated["due_date"] ?? null,
                 ]);
 
+
+                // add activity 
+
+                TaskActivity::create([
+                    "task_id" => $task->id,
+                    "user_id" => Auth::user()->id,
+                    "event" => "created",
+                    "description" => "created the task ",
+                ]);
+
                 if (!empty($validated["files"])) {
 
                     foreach ($validated["files"] as $file) {
@@ -51,7 +62,23 @@ class TaskService
             return false;
         }
 
-        $task->users()->attach($validated_data["user_id"]);
+        Db::transaction(function () use ($validated_data, $user_assigned, $task) {
+
+            $task->users()->attach($validated_data["user_id"]);
+            // add activity 
+
+            TaskActivity::create([
+                "task_id" => $task->id,
+                "user_id" => Auth::user()->id,
+                "event" => "assign",
+                "description" => "assigned the task to " . $user_assigned->name,
+                "new_values" => [
+                    "assigned_to" => $user_assigned->id
+                ]
+            ]);
+        });
+
+
 
         $data = [
             "task_id" => $task->id,
@@ -67,9 +94,29 @@ class TaskService
 
     public function changeStatus(array $validated_data, Task $task, User $user)
     {
-        $task->update([
-            "status" => $validated_data["status"]
-        ]);
+        $oldStatus = $task->status;
+
+        Db::transaction(function () use ($validated_data, $oldStatus, $task) {
+
+            $task->update([
+                "status" => $validated_data["status"]
+            ]);
+
+            // add activity 
+
+            TaskActivity::create([
+                "task_id" => $task->id,
+                "user_id" => Auth::user()->id,
+                "event" => "status_changed",
+                "description" => "changed the status  ",
+                "new_values" => [
+                    "status" => $validated_data["status"]
+                ],
+                "old_values" => [
+                    "status" => $oldStatus
+                ]
+            ]);
+        });
 
         $assignees = $task->users()->where("user_id", "<>", Auth::user()->id)->get();
         $owner = $task->project->workspace->owner()->where("id", "<>", Auth::user()->id)->first();
@@ -89,7 +136,30 @@ class TaskService
 
     public function deleteAssignee(Task $task, User $user)
     {
-        $task->users()->detach($user->id);
+
+
+        Db::transaction(function () use ($user, $task) {
+
+            $task->users()->detach($user->id);
+
+            // add activity 
+
+            TaskActivity::create([
+                "task_id" => $task->id,
+                "user_id" => Auth::user()->id,
+                "event" => "unassigned",
+                "description" => "deleted the member " . $user->name,
+                "old_values" => [
+                    "unassigned_user_id" => $user->id
+                ]
+
+            ]);
+        });
+
+
+
+
+
 
         $data = [
             "task_id" => $task->id,
@@ -107,6 +177,7 @@ class TaskService
         $task->load([
             'users',
             'attachments.user',
+            'activities.user',
             'comments' => function ($query) {
                 $query->whereNull('parent_id')->with([
                     'user',

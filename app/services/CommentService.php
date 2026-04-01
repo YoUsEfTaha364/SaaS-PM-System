@@ -7,6 +7,7 @@ use App\Models\Attachment;
 use App\Models\Comment;
 use App\Models\Project;
 use App\Models\Task;
+use App\Models\TaskActivity;
 use App\Notifications\CommentNotification;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -21,7 +22,7 @@ class CommentService
         $validated = $validated_data;
 
 
-        $comment=DB::transaction(
+        $comment = DB::transaction(
             function () use ($validated, $task) {
 
                 $comment = Comment::create([
@@ -29,6 +30,18 @@ class CommentService
                     "user_id" => Auth::user()->id,
                     "parent_id" => null,
                     "task_id" => $task->id,
+                ]);
+
+                // add activity
+
+                TaskActivity::create([
+                    "task_id" => $task->id,
+                    "user_id" => auth::user()->id,
+                    "event" => "comment_added",
+                    "description" => "added a comment",
+                    "new_values" => [
+                        "comment_id" => $comment->id
+                    ]
                 ]);
 
                 if (!empty($validated["files"])) {
@@ -41,7 +54,7 @@ class CommentService
                 return $comment;
             }
 
-            
+
 
         );
 
@@ -66,23 +79,33 @@ class CommentService
         }
 
         return $comment;
-
-
     }
-    public function storeReply(array $validated_data, Task $task,Comment $comment)
+    public function storeReply(array $validated_data, Task $task, Comment $comment)
     {
         $validated = $validated_data;
 
 
-        $reply=DB::transaction(
-            function () use ($validated, $task,$comment) {
+        $reply = DB::transaction(
+            function () use ($validated, $task, $comment) {
 
-              $reply = Comment::create([
-            "content" => $validated["content"],
-            "user_id" => Auth::user()->id,
-            "parent_id" => $comment->id,
-            "task_id" => $task->id,
-        ]);
+                $reply = Comment::create([
+                    "content" => $validated["content"],
+                    "user_id" => Auth::user()->id,
+                    "parent_id" => $comment->id,
+                    "task_id" => $task->id,
+                ]);
+                // add activity
+
+                    TaskActivity::create([
+                    "task_id" => $task->id,
+                    "user_id" => Auth::user()->id,
+                    "event" => "comment_replied",
+                    "description" => "replied  a comment to ".$comment->user->name,
+                    "new_values" => [
+                        "comment_id" => $reply->id,
+                        "replied_comment_id" => $comment->id,
+                    ]
+                ]);
 
                 if (!empty($validated["files"])) {
 
@@ -94,15 +117,13 @@ class CommentService
                 return $reply;
             }
 
-            
-
         );
 
         $notf_data = [
             "name" => Auth::user()->name,
             "content" => $validated["content"],
             "task" => $task->title,
-            "message" => "the member " .Auth::user()->name ."  in task {$task->title} has replied on your comment ",
+            "message" => "the member " . Auth::user()->name . "  in task {$task->title} has replied on your comment ",
             "type" => "comment_notification",
         ];
 
@@ -113,8 +134,6 @@ class CommentService
         CommentEvent::dispatch($notf_data, $comment->user->id);
 
         return $reply;
-
-
     }
 
     protected function uploadFile($file, $comment_id)

@@ -68,5 +68,9 @@ class User extends Authenticatable
         return $this->hasmany(Attachment::class,"uploaded_by");
     }
 
+    public function activities(){
+        return $this->hasMany(TaskActivity::class);
+    }
+
 
 }
