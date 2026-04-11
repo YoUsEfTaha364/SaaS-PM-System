@@ -20,6 +20,17 @@ class TaskFilterController extends Controller
         ->with('project.workspace');
 
         $applyFilters = function ($query) use ($request) {
+            if ($request->filled('search')) {
+                $term = "%" . $request->search . "%";
+                $query->where(function ($q) use ($term) {
+                    $q->where('title', 'like', $term)
+                      ->orWhere('description', 'like', $term)
+                      ->orWhereHas('project', function ($pq) use ($term) {
+                          $pq->where('name', 'like', $term);
+                      });
+                });
+            }
+
             if ($request->filled('workspace_id')) {
                 $query->whereHas('project', function ($q) use ($request) {
                     $q->where('workspace_id', $request->workspace_id);

@@ -13,7 +13,7 @@
         </div>
 
         @php
-            $hasFilters = request()->filled('workspace_id') || request()->filled('due_date') || request()->filled('status');
+            $hasFilters = request()->filled('workspace_id') || request()->filled('due_date') || request()->filled('status') || request()->filled('search');
             $hasAssignedTasks = $assigned_tasks->count() > 0;
             $hasOwnedTasks = $owned_tasks->count() > 0;
             $hasTasks = $hasAssignedTasks || $hasOwnedTasks;
@@ -22,13 +22,20 @@
         @if ($hasTasks || $hasFilters)
             <!-- Filters -->
             <div class="flex flex-col sm:flex-row gap-4 items-center">
-                <div class="flex-grow w-full sm:w-auto">
-                    <input type="text" placeholder="Search tasks..."
-                        class="form-input w-full text-sm border-gray-200 rounded-lg shadow-sm">
-                </div>
-                <form method="post" action="{{ route("tasks.filter") }}" class="flex gap-4">
+                <form method="post" action="{{ route("tasks.filter") }}" class="flex flex-col sm:flex-row gap-4 w-full">
                     @csrf
-                    <div class="relative">
+                    <div class="flex-grow w-full sm:w-auto relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <svg class="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            </svg>
+                        </div>
+                        <input type="text" name="search" value="{{ request('search') }}" placeholder="Search tasks by name or project..."
+                            class="form-input w-full text-sm border-gray-200 rounded-lg shadow-sm pl-10" onkeypress="if(event.key === 'Enter') this.form.submit()">
+                    </div>
+                    
+                    <div class="flex flex-wrap gap-4">
+                        <div class="relative">
                         <select name="workspace_id" onchange="this.form.submit()"
                             class="form-select pl-3 pr-8 py-2 text-sm border-gray-200 rounded-lg">
                             <option value="">All Workspaces</option>
@@ -84,6 +91,7 @@
                         </svg>
 
                     </div>
+                    </div>
                 </form>
             </div>
         @endif
@@ -130,7 +138,7 @@
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             <span
                                                 class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                                                            {{ $task->status == 'done' ? 'bg-green-100 text-green-800' : ($task->status == 'in_progress' ? 'bg-blue-100 text-blue-800' : 'bg-yellow-100 text-yellow-800') }}">
+                                                        {{ $task->status == 'done' ? 'bg-green-100 text-green-800' : ($task->status == 'in_progress' ? 'bg-blue-100 text-blue-800' : 'bg-yellow-100 text-yellow-800') }}">
                                                 {{ str_replace('_', ' ', $task->status) }}
                                             </span>
                                         </td>
@@ -187,7 +195,7 @@
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             <span
                                                 class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                                                            {{ $task->status == 'done' ? 'bg-green-100 text-green-800' : ($task->status == 'in_progress' ? 'bg-blue-100 text-blue-800' : 'bg-yellow-100 text-yellow-800') }}">
+                                                        {{ $task->status == 'done' ? 'bg-green-100 text-green-800' : ($task->status == 'in_progress' ? 'bg-blue-100 text-blue-800' : 'bg-yellow-100 text-yellow-800') }}">
                                                 {{ str_replace('_', ' ', $task->status) }}
                                             </span>
                                         </td>
