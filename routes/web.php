@@ -37,6 +37,7 @@ Route::controller(WorkspaceController::class)->middleware("auth")->group(functio
 
     Route::get("/workspaces", "index")->name("workspaces.index");
     Route::post("/workspaces", "store")->name("workspaces.store");
+    Route::put('/workspaces/{workspace}', 'update')->name('workspaces.update');
 });
 
 
@@ -56,8 +57,7 @@ Route::controller(ProjectController::class)->middleware("auth")->group(function 
     Route::post("/workspaces/{workspace}/projects", "store")->name("workspaces.projects.store");
 
     Route::get("/workspaces/{workspace}/projects/{project}", "show")->name("workspaces.projects.show");
-
-   
+    Route::put("/workspaces/{workspace}/projects/{project}", "update")->name("workspaces.projects.update");
 });
 Route::controller(TaskController::class)->middleware("auth")->group(function () {
 

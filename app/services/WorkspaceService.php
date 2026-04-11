@@ -7,6 +7,9 @@ use Illuminate\Support\Facades\Auth;
 
 class WorkspaceService
 {
+    /**
+     * @return \Illuminate\Database\Eloquent\Collection|array
+     */
     public function getWorkspacesData()
     {
         $user = Auth::user();
@@ -26,6 +29,15 @@ class WorkspaceService
 
         $workspace->users()->attach(Auth::user()->id, [
             "role" => "owner"
+        ]);
+
+        return $workspace;
+    }
+
+    public function updateWorkspace(array $validated_data, Workspace $workspace)
+    {
+        $workspace->update([
+            "name" => $validated_data["name"],
         ]);
 
         return $workspace;

@@ -13,10 +13,17 @@
             </p>
         </div>
         @can('manageWorkspace', $workspace)
-            <button @click="openModal('addTask')" class="mt-4 sm:mt-0 inline-flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 text-sm font-semibold rounded-lg shadow-md hover:bg-indigo-700 transition-colors">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
-                <span>New Task</span>
-            </button>
+            <div class="flex space-x-2 mt-4 sm:mt-0">
+                <button @click="openModal('editProject')"
+                    class="inline-flex items-center gap-2 bg-indigo-50 text-indigo-700 px-4 py-2 text-sm font-semibold rounded-lg shadow-sm hover:bg-indigo-100 transition-colors border border-indigo-200">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                    <span>Edit</span>
+                </button>
+                <button @click="openModal('addTask')" class="inline-flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 text-sm font-semibold rounded-lg shadow-md hover:bg-indigo-700 transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+                    <span>New Task</span>
+                </button>
+            </div>
         @endcan
     </div>
 
@@ -99,6 +106,21 @@
             <div class="mt-6 flex justify-end">
                 <x-secondary-button @click="closeModal()">Cancel</x-secondary-button>
                 <x-primary-button class="ml-3">Create Task</x-primary-button>
+            </div>
+        </form>
+    </x-modal>
+    <!-- Edit Project Modal -->
+    <x-modal name="editProject" title="Edit Project">
+        <form method="POST" action="{{ route('workspaces.projects.update', [$workspace, $project]) }}">
+            @csrf
+            @method('PUT')
+            <div>
+                <x-input-label for="project_name" value="Project Name" />
+                <x-text-input id="project_name" name="name" class="block mt-1 w-full" type="text" value="{{ $project->name }}" required autofocus />
+            </div>
+            <div class="mt-6 flex justify-end">
+                <x-secondary-button @click="closeModal()">Cancel</x-secondary-button>
+                <x-primary-button class="ml-3">Update Project</x-primary-button>
             </div>
         </form>
     </x-modal>

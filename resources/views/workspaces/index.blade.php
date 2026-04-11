@@ -30,8 +30,13 @@
                 <div class="bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-lg transition-shadow duration-300 flex flex-col">
                     <div class="p-6 flex-grow">
                         <div class="flex justify-between items-start mb-4">
-                            <h2 class="text-xl font-semibold text-gray-800">
+                            <h2 class="text-xl font-semibold text-gray-800 flex items-center gap-2">
                                 <a href="{{ route('workspaces.show', $workspace) }}" class="hover:text-indigo-600">{{ $workspace->name }}</a>
+                                @can('manageWorkspace', $workspace)
+                                    <button @click.prevent="openModal('editWorkspace-{{ $workspace->id }}')" class="text-gray-400 hover:text-indigo-600 transition-colors" title="Rename Workspace">
+                                        <svg class="w-4 h-4 outline-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                                    </button>
+                                @endcan
                             </h2>
                             <span class="text-xs font-medium px-3 py-1 rounded-full capitalize
                                 {{ $workspace->pivot->role == 'owner' ? 'bg-indigo-100 text-indigo-800' : 'bg-gray-100 text-gray-800' }}">
@@ -79,3 +84,24 @@
     @endif
 </div>
 @endsection
+
+@push('modals')
+    @foreach($workspaces as $workspace)
+        @can('manageWorkspace', $workspace)
+            <x-modal name="editWorkspace-{{ $workspace->id }}" title="Edit Workspace">
+                <form method="POST" action="{{ route('workspaces.update', $workspace) }}">
+                    @csrf
+                    @method('PUT')
+                    <div>
+                        <x-input-label for="workspace_name_{{ $workspace->id }}" value="Workspace Name" />
+                        <x-text-input id="workspace_name_{{ $workspace->id }}" name="name" class="block mt-1 w-full" type="text" value="{{ $workspace->name }}" required autofocus />
+                    </div>
+                    <div class="mt-6 flex justify-end">
+                        <x-secondary-button @click="closeModal()">Cancel</x-secondary-button>
+                        <x-primary-button class="ml-3">Update Workspace</x-primary-button>
+                    </div>
+                </form>
+            </x-modal>
+        @endcan
+    @endforeach
+@endpush

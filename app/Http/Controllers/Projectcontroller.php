@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\UpdateProjectRequest;
 use App\Models\Project;
 use App\Models\Workspace;
 use App\Services\ProjectService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 
 class ProjectController extends Controller
@@ -40,6 +42,19 @@ class ProjectController extends Controller
         $this->projectService->storeProject($validated, $workspace);
 
         return redirect()->back()->with("add-project", "project added successfully");
+    }
+
+    public function update(UpdateProjectRequest $request, Workspace $workspace, Project $project)
+    {
+
+
+          Gate::authorize("manageWorkspace", $workspace);
+
+        $validated = $request->validated();
+
+        $this->projectService->updateProject($validated, $project);
+
+        return redirect()->back()->with("update-project", "Project updated successfully");
     }
 
     public function show(Workspace $workspace, Project $project)

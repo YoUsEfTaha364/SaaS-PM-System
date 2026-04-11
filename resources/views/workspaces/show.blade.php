@@ -14,6 +14,11 @@
             </div>
             @can('manageWorkspace', $workspace)
                 <div class="flex space-x-2 mt-4 sm:mt-0">
+                    <button @click="openModal('editWorkspace')"
+                        class="inline-flex items-center gap-2 bg-indigo-50 text-indigo-700 px-4 py-2 text-sm font-semibold rounded-lg shadow-sm hover:bg-indigo-100 transition-colors border border-indigo-200">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                        <span>Edit</span>
+                    </button>
                     <button @click="openModal('addProject')"
                         class="inline-flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 text-sm font-semibold rounded-lg shadow-md hover:bg-indigo-700 transition-colors">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -35,7 +40,7 @@
         </div>
 
         <!-- Flash Messages -->
-        @if (session('update-member') || session('delete-member') ||session('success_invitation') || session('add-project') || $errors->any())
+        @if (session('update-member') || session('delete-member') ||session('success_invitation') || session('add-project') || session('update-workspace') || session('update-project') || $errors->any())
             <div class="space-y-2">
                 @if (session('success_invitation'))
                     <div class="bg-green-100 border border-green-300 text-green-800 px-4 py-3 rounded-lg text-sm">
@@ -44,6 +49,14 @@
                 @if (session('add-project'))
                     <div class="bg-green-100 border border-green-300 text-green-800 px-4 py-3 rounded-lg text-sm">
                         {{ session('add-project') }}</div>
+                @endif
+                @if (session('update-project'))
+                    <div class="bg-green-100 border border-green-300 text-green-800 px-4 py-3 rounded-lg text-sm">
+                        {{ session('update-project') }}</div>
+                @endif
+                @if (session('update-workspace'))
+                    <div class="bg-green-100 border border-green-300 text-green-800 px-4 py-3 rounded-lg text-sm">
+                        {{ session('update-workspace') }}</div>
                 @endif
                 @if (session('delete-member'))
                     <div class="bg-green-100 border border-green-300 text-green-800 px-4 py-3 rounded-lg text-sm">
@@ -92,11 +105,18 @@
                                 <div
                                     class="bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-lg transition-shadow duration-300 flex flex-col">
                                     <div class="p-6 flex-grow">
-                                        <h3 class="text-lg font-semibold text-gray-800 mb-2">
-                                            <a href="{{ route('workspaces.projects.show', [$workspace, $project]) }}"
-                                                class="hover:text-indigo-600">{{ $project->name }}</a>
-                                        </h3>
-                                        <p class="text-sm text-gray-500">
+                                        <div class="flex justify-between items-start mb-2">
+                                            <h3 class="text-lg font-semibold text-gray-800">
+                                                <a href="{{ route('workspaces.projects.show', [$workspace, $project]) }}"
+                                                    class="hover:text-indigo-600">{{ $project->name }}</a>
+                                            </h3>
+                                        @can('manageWorkspace', $workspace)
+                                            <button @click.prevent="openModal('editProject-{{ $project->id }}')" class="text-gray-400 hover:text-indigo-600 transition-colors" title="Rename Project">
+                                                <svg class="w-4 h-4 outline-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                                            </button>
+                                        @endcan
+                                    </div>
+                                    <p class="text-sm text-gray-500">
                                             {{ $project->tasks_count }} Tasks
                                         </p>
                                     </div>
@@ -191,6 +211,22 @@
 @endsection
 
 @push('modals')
+    <!-- Edit Workspace Modal -->
+    <x-modal name="editWorkspace" title="Edit Workspace">
+        <form method="POST" action="{{ route('workspaces.update', $workspace) }}">
+            @csrf
+            @method('PUT')
+            <div>
+                <x-input-label for="workspace_name" value="Workspace Name" />
+                <x-text-input id="workspace_name" name="name" class="block mt-1 w-full" type="text" value="{{ $workspace->name }}" required autofocus />
+            </div>
+            <div class="mt-6 flex justify-end">
+                <x-secondary-button @click="closeModal()">Cancel</x-secondary-button>
+                <x-primary-button class="ml-3">Update Workspace</x-primary-button>
+            </div>
+        </form>
+    </x-modal>
+
     <!-- Add Project Modal -->
     <x-modal name="addProject" title="Create New Project">
         <form method="POST" action="{{ route('workspaces.projects.store', $workspace) }}">
@@ -205,6 +241,26 @@
             </div>
         </form>
     </x-modal>
+
+    <!-- Edit Project Modals -->
+    @foreach ($workspace->projects as $project)
+        @can('manageWorkspace', $workspace)
+            <x-modal name="editProject-{{ $project->id }}" title="Edit Project">
+                <form method="POST" action="{{ route('workspaces.projects.update', [$workspace, $project]) }}">
+                    @csrf
+                    @method('PUT')
+                    <div>
+                        <x-input-label for="project_name_{{ $project->id }}" value="Project Name" />
+                        <x-text-input id="project_name_{{ $project->id }}" name="name" class="block mt-1 w-full" type="text" value="{{ $project->name }}" required autofocus />
+                    </div>
+                    <div class="mt-6 flex justify-end">
+                        <x-secondary-button @click="closeModal()">Cancel</x-secondary-button>
+                        <x-primary-button class="ml-3">Update Project</x-primary-button>
+                    </div>
+                </form>
+            </x-modal>
+        @endcan
+    @endforeach
 
     <!-- Add Member Modal -->
     <x-modal name="addMember" title="Add New Member">

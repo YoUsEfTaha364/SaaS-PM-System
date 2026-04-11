@@ -30,7 +30,16 @@ class ProjectService
         ]);
     }
 
-    public function getProjectViewData(Workspace $workspace, Project $project)
+    public function updateProject(array $validated_data, Project $project)
+    {
+        $project->update([
+            "name" => $validated_data["name"],
+        ]);
+
+        return $project;
+    }
+
+    public function getProjectViewData(Workspace $workspace, Project $project): array
     {
         $members = $workspace->users()->wherePivot("role", "<>", "owner")->get();
 
