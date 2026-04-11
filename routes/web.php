@@ -7,6 +7,7 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\TaskController;
+use App\Http\Controllers\TaskFilterController;
 use App\Http\Controllers\WorkspaceController;
 
 use App\Http\Controllers\WorkspaceInvitationController;
@@ -105,6 +106,11 @@ Route::controller(TaskController::class)->middleware("auth")->group(function () 
   Route::controller(AttachmentController::class)->prefix("attachments/")->name("attachments.")->middleware("auth")->group(function(){
 
     Route::get("download/{attachment}","download")->name("download");
+
+  });
+  Route::controller(TaskFilterController::class)->prefix("tasks/")->name("tasks.")->middleware("auth")->group(function(){
+
+    Route::post("filter","filter")->name("filter");
 
   });
 

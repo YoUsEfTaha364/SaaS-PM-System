@@ -21,15 +21,22 @@ class TaskController extends Controller
     }
     public function index()
     {
+       
+        $owned_tasks=Task::whereHas("project.workspace",function($query) {
+           $query->where("owner_id",Auth::user()->id);
+        })->get();
+
         $user = Auth::user();
-        $tasks = $user->tasks()
+        
+        $assigned_tasks = $user->tasks()
             ->with('project.workspace')
             ->orderBy('updated_at', 'desc')
             ->get();
 
+
         $workspaces = $user->workspaces;
 
-        return view('tasks.index', compact('tasks', 'workspaces'));
+        return view('tasks.index', compact('assigned_tasks', 'owned_tasks', 'workspaces'));
     }
     public function store(TaskRequest $request, Project $project)
     {
@@ -71,6 +78,14 @@ class TaskController extends Controller
         ]);
 
         $this->task_service->changeStatus($validated, $task, $user);
+
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true, 
+                'message' => 'Status changed successfully',
+                'status' => $validated['status']
+            ]);
+        }
 
         return redirect()->back()->with("change-status", "status changed successfully");
     }

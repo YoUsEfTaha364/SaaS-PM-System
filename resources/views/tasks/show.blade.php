@@ -396,45 +396,74 @@
 
                     <!-- Activity Log -->
                     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-                        <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">Activity Log</h3>
+                        <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-6">Activity Log</h3>
 
-                        <div class="space-y-4 max-h-96 overflow-y-auto pr-2">
+                        <div class="relative pl-6 space-y-6 max-h-[500px] overflow-y-auto pr-2 pb-2 custom-scrollbar">
+                            <!-- Vertical line -->
+                            <div class="absolute top-2 bottom-0 left-[11px] w-px bg-gray-200"></div>
+
                             @forelse ($task->activities->sortByDesc('created_at') as $activity)
-                                <div class="text-sm border-l-2 border-indigo-100 pl-3 py-1">
+                                <div class="relative flex flex-col group">
+                                    <!-- Dynamic Icon Background -->
+                                    @php
+                                        $iconColor = match($activity->event) {
+                                            'created', 'completed' => 'text-emerald-600 bg-emerald-100 ring-white',
+                                            'status_changed' => 'text-blue-600 bg-blue-100 ring-white',
+                                            'assigned', 'unassigned' => 'text-purple-600 bg-purple-100 ring-white',
+                                            'comment_added', 'comment_replied' => 'text-yellow-600 bg-yellow-100 ring-white',
+                                            'deleted' => 'text-red-600 bg-red-100 ring-white',
+                                            default => 'text-gray-600 bg-gray-100 ring-white'
+                                        };
+                                    @endphp
+                                    <div class="absolute -left-[30px] top-1 w-6 h-6 rounded-full flex items-center justify-center z-10 shadow-sm ring-4 {{ $iconColor }}">
+                                        @if(in_array($activity->event, ['created', 'completed']))
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                                        @elseif(in_array($activity->event, ['status_changed']))
+                                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                                        @elseif(in_array($activity->event, ['assigned', 'unassigned']))
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                                        @elseif(in_array($activity->event, ['comment_added', 'comment_replied']))
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
+                                        @else
+                                            <div class="w-1.5 h-1.5 rounded-full bg-current"></div>
+                                        @endif
+                                    </div>
 
-                                    <span class="font-semibold text-gray-700">
-                                        {{ $activity->user->name ?? 'Unknown' }}
-                                    </span>
-
-                                    <span class="text-gray-500">
+                                    <div class="text-xs text-gray-400 mb-1 flex items-center gap-2">
+                                        <time datetime="{{ $activity->created_at->toIso8601String() }}">
+                                            {{ $activity->created_at->format('M d, Y') }} at {{ $activity->created_at->format('g:i A') }}
+                                        </time>
+                                        <span class="text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity">&bull; {{ $activity->created_at->diffForHumans() }}</span>
+                                    </div>
+                                    <p class="text-sm text-gray-600 leading-snug bg-gray-50 border border-gray-100 p-2.5 rounded-lg inline-block self-start mt-0.5">
+                                        <strong class="font-semibold text-gray-900">{{ $activity->user->name ?? 'Unknown' }}</strong>
+                                        
                                         @switch($activity->event)
                                             @case('created')
                                                 created the task
                                             @break
-
+                                            
                                             @case('status_changed')
-                                                changed status from
-                                                <span class="font-medium text-gray-700">
-                                                    {{ $activity->old_values['status'] ?? '-' }}
+                                                changed status from 
+                                                @php $oldStatus = $activity->old_values['status'] ?? 'todo'; @endphp
+                                                <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider {{ $oldStatus == 'done' ? 'bg-green-100 text-green-800' : ($oldStatus == 'in_progress' ? 'bg-blue-100 text-blue-800' : 'bg-yellow-100 text-yellow-800') }}">
+                                                    {{ str_replace('_', ' ', $oldStatus) }}
                                                 </span>
-                                                to
-                                                <span class="font-medium text-gray-700">
-                                                    {{ $activity->new_values['status'] ?? '-' }}
+                                                to 
+                                                @php $newStatus = $activity->new_values['status'] ?? 'todo'; @endphp
+                                                <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider {{ $newStatus == 'done' ? 'bg-green-100 text-green-800' : ($newStatus == 'in_progress' ? 'bg-blue-100 text-blue-800' : 'bg-yellow-100 text-yellow-800') }}">
+                                                    {{ str_replace('_', ' ', $newStatus) }}
                                                 </span>
                                             @break
 
                                             @case('assigned')
-                                                assigned the task to
-                                                <span class="font-medium text-gray-700">
-                                                    {{ \App\Models\User::find($activity->new_values['assigned_to'])->name ?? 'User' }}
-                                                </span>
+                                                assigned the task to 
+                                                <strong class="font-medium text-gray-900">{{ \App\Models\User::find($activity->new_values['assigned_to'])->name ?? 'User' }}</strong>
                                             @break
 
                                             @case('unassigned')
                                                 removed
-                                                <span class="font-medium text-gray-700">
-                                                    {{ \App\Models\User::find($activity->old_values['unassigned_user_id'])->name ?? 'User' }}
-                                                </span>
+                                                <strong class="font-medium text-gray-900">{{ \App\Models\User::find($activity->old_values['unassigned_user_id'])->name ?? 'User' }}</strong>
                                                 from the task
                                             @break
 
@@ -457,17 +486,13 @@
                                             @default
                                                 {{ $activity->description }}
                                         @endswitch
-                                    </span>
-
-                                    <div class="text-xs text-gray-400 mt-0.5">
-                                        {{ $activity->created_at->diffForHumans() }}
-                                    </div>
+                                    </p>
                                 </div>
-
-                                @empty
-                                    <p class="text-gray-500 text-sm italic">No activity yet.</p>
-                                @endforelse
-                            </div>
+                            @empty
+                                <div class="text-center py-4 relative z-20">
+                                    <p class="text-gray-500 text-sm italic">No activity yet. Things have been quiet here!</p>
+                                </div>
+                            @endforelse
                         </div>
                     </div>
 

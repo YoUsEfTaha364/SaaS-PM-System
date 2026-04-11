@@ -23,6 +23,7 @@ class WorkspaceInvitationController extends Controller
 
     public function accept_invitation_non_registered($token)
     {
+        
         $this->invitationService->acceptNonRegisteredInvitation($token);
        
         return redirect()->route("welcome");
