@@ -26,6 +26,7 @@ class TaskPolicy
 
 
      public function change_status(User $user ,Task $task){
+    
         return $task->users()->where("user_id",$user->id)->exists() || $task->project->workspace->owner()->first()->id==$user->id;
     }
 }

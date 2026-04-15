@@ -49,6 +49,7 @@ class WorkspaceInvitationService
 
     public function acceptNonRegisteredInvitation(string $token)
     {
+        
         session(["workspace_invitation_token" => $token]);
     }
 }

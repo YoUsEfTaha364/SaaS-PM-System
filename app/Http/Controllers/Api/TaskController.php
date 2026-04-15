@@ -1,71 +1,80 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Api;
 
+use App\Http\Controllers\Controller;
 use App\Http\Requests\TaskRequest;
+use App\Http\Resources\TaskDetailsResource;
+use App\Http\Resources\TaskResource;
 use App\Models\Project;
 use App\Models\Task;
 use App\Models\User;
-use App\Services\TaskService;
+use App\Services\api\ApiResponseService;
+use App\Services\api\TaskService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 
 class TaskController extends Controller
 {
-    protected $task_service;
+    protected TaskService $task_service;
 
     public function __construct(TaskService $service)
     {
         $this->task_service = $service;
     }
+
     public function index()
     {
-
         $owned_tasks = Task::whereHas("project.workspace", function ($query) {
             $query->where("owner_id", Auth::user()->id);
-        })->get();
+        })->with(["project:id,name,workspace_id","project.workspace:id,name"])->get();
+
+        
 
         $user = Auth::user();
 
         $assigned_tasks = $user->tasks()
-            ->with('project.workspace')
+            ->with(["project:id,name,workspace_id","project.workspace:id,name"])
             ->orderBy('updated_at', 'desc')
             ->get();
 
-
         $workspaces = $user->workspaces;
 
-        return view('tasks.index', compact('assigned_tasks', 'owned_tasks', 'workspaces'));
+        
+
+        return ApiResponseService::response(200, "get all tasks", ["owned_tasks" =>TaskResource::collection($owned_tasks),"assigned_tasks"=>TaskResource::collection($assigned_tasks)]);
     }
+
     public function store(TaskRequest $request, Project $project)
     {
-
+        
         Gate::authorize("manageWorkspace", $project->workspace);
 
         $validated = $request->validated();
 
-        $this->task_service->storeTask($validated, $project);
+       $task= $this->task_service->storeTask($validated, $project);
 
-        return redirect()->back()->with("add-task", "task added successfully");
+        return ApiResponseService::response(201, "task created successfully", ["task"=>$task]);
     }
 
     public function assignTask(Request $request, Task $task)
     {
-
         Gate::authorize("manageWorkspace", $task->project->workspace);
 
         $validated = $request->validate([
             "user_id" => ["required", "exists:users,id"]
         ]);
 
+       
+
         $assigned = $this->task_service->assignTask($validated, $task);
 
         if (!$assigned) {
-            return redirect()->back()->with("assigned-user", "user already assigned");
+        return ApiResponseService::response(200, "user already a member", []);
         }
 
-        return redirect()->back()->with("assign-task", "task assigned successfully");
+        return ApiResponseService::response(201, "user added as member successfully");
     }
 
     public function changeStatus(Request $request, Task $task, User $user)
@@ -76,25 +85,27 @@ class TaskController extends Controller
         $validated = $request->validate([
             "status" => ["required", "in:in_progress,todo,done"]
         ]);
-
+      
         $this->task_service->changeStatus($validated, $task, $user);
 
-        return redirect()->back()->with("change-status", "status changed successfully");
+        return ApiResponseService::response(201, "status changed correctly");
     }
 
     public function deleteAssignee(Task $task, User $user)
     {
+   
         Gate::authorize("manageWorkspace", $task->project->workspace);
 
         $this->task_service->deleteAssignee($task, $user);
 
-        return redirect()->back()->with("delete-assignee", "assignee deleted  successfully");
+      return ApiResponseService::response(201, "member deleted successfully");
+
     }
 
     public function view(Project $project, Task $task)
     {
         $data = $this->task_service->getTaskViewData($project, $task);
 
-        return view("tasks.show", $data);
+        return ApiResponseService::response(200, "get all tasks",new TaskDetailsResource($data));
     }
 }

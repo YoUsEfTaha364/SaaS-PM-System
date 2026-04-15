@@ -34,7 +34,7 @@ class WorkspaceController extends Controller
 
     public function store(\App\Http\Requests\createWorkspaceRequest $request)
     {
-   
+
         $validated = $request->validated();
 
         $this->workspaceService->storeWorkspace($validated);

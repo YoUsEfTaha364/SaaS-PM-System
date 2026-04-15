@@ -28,9 +28,8 @@ class WorkspaceMemberController extends Controller
     public function store(Request $request, Workspace $workspace)
     {
 
+        Gate::authorize("manageWorkspace", $workspace);
 
-          Gate::authorize("manageWorkspace",$workspace);
-  
         $validated = $request->validate([
             "email" => ["required", "email"],
             "role" => ["required", "string", "in:member,manager"],
@@ -45,21 +44,21 @@ class WorkspaceMemberController extends Controller
 
     public function delete(Workspace $workspace, User $user)
     {
-        Gate::authorize("manageWorkspace",$workspace);
+        Gate::authorize("manageWorkspace", $workspace);
         $this->workspaceService->removeMember($workspace, $user);
 
         return back()->with(["delete-member" => "member deleted successfully"]);
     }
-    public function update(Request $request,Workspace $workspace, User $user)
+    public function update(Request $request, Workspace $workspace, User $user)
     {
-        Gate::authorize("manageWorkspace",$workspace);
+        Gate::authorize("manageWorkspace", $workspace);
 
-        $validated=$request->validate([
-            "role"=>"required|string|max:50|in:manager,member"
+        $validated = $request->validate([
+            "role" => "required|string|max:50|in:manager,member"
         ]);
 
 
-        $this->workspaceService->updateMemberRole($workspace,$user,$validated["role"]);
+        $this->workspaceService->updateMemberRole($workspace, $user, $validated["role"]);
 
         return back()->with(["update-member" => "member updated successfully"]);
 

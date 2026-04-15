@@ -1,10 +1,12 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Api;
 
+use App\Http\Controllers\Controller;
 use App\Http\Requests\UpdateProjectRequest;
 use App\Models\Project;
 use App\Models\Workspace;
+use App\Services\api\ApiResponseService;
 use App\Services\ProjectService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -24,14 +26,14 @@ class ProjectController extends Controller
     {
         $data = $this->projectService->getProjectsData();
 
-        return view('projects.index', $data);
+        return ApiResponseService::response(200, "get workspace projects", $data);
     }
 
     public function store(Request $request, Workspace $workspace)
     {
-        if (Auth::user()->cannot("manageWorkspace", $workspace)) {
-            abort(403);
-        }
+       
+        Gate::authorize("manageWorkspace", $workspace);
+   
 
         $validated = $request->validate([
             "name" => [
@@ -43,28 +45,26 @@ class ProjectController extends Controller
             ]
         ]);
 
-        $this->projectService->storeProject($validated, $workspace);
+        $project = $this->projectService->storeProject($validated, $workspace);
 
-        return redirect()->back()->with("add-project", "project added successfully");
+        return ApiResponseService::response(201, "project created successfully", $project);
     }
 
     public function update(UpdateProjectRequest $request, Workspace $workspace, Project $project)
     {
-
-
         Gate::authorize("manageWorkspace", $workspace);
 
         $validated = $request->validated();
 
-        $this->projectService->updateProject($validated, $project);
+        $project = $this->projectService->updateProject($validated, $project);
 
-        return redirect()->back()->with("update-project", "Project updated successfully");
+        return ApiResponseService::response(200, "project updated successfully", ["project"=>$project]);
     }
 
     public function show(Workspace $workspace, Project $project)
     {
         $data = $this->projectService->getProjectViewData($workspace, $project);
 
-        return view("projects.show", $data);
+        return ApiResponseService::response(200, "get project", $data);
     }
 }

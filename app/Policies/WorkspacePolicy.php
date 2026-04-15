@@ -15,9 +15,12 @@ class WorkspacePolicy
 
     public function manageWorkspace(User $user, workspace $workspace): bool
     {
+        
         $member = $workspace->users()
             ->where('user_id', $user->id)
             ->first();
+
+           
 
         return $member && $member->pivot->role == "owner";
     }

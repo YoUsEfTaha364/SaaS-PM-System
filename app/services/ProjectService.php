@@ -41,8 +41,6 @@ class ProjectService
 
     public function getProjectViewData(Workspace $workspace, Project $project): array
     {
-        $members = $workspace->users()->wherePivot("role", "<>", "owner")->get();
-
-        return compact('workspace', 'project', 'members');
+        return compact('project');
     }
 }
