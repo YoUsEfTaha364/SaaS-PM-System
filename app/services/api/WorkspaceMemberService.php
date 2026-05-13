@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services\api;
+namespace App\Services\Api;
 
 use App\Events\WorkspaceInvitationEvent;
 use App\Mail\InvoiceMail;

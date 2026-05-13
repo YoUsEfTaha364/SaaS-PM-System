@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services\api;
+namespace App\Services\Api;
 
 
 class ApiResponseService{
