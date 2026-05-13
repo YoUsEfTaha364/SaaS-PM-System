@@ -63,6 +63,7 @@ class ProjectController extends Controller
 
     public function show(Workspace $workspace, Project $project)
     {
+        
         $data = $this->projectService->getProjectViewData($workspace, $project);
 
         return view("projects.show", $data);

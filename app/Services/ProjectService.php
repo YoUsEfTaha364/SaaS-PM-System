@@ -41,6 +41,6 @@ class ProjectService
 
     public function getProjectViewData(Workspace $workspace, Project $project): array
     {
-        return compact('project');
+        return compact('project', 'workspace');
     }
 }
