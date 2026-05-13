@@ -12,7 +12,7 @@ class Task extends Model
         return $this->belongsToMany(User::class);
     }
     public function project(){
-        return $this->belongsTo(project::class);
+        return $this->belongsTo(Project::class);
     }
     public function comments(){
         return $this->hasmany(Comment::class);

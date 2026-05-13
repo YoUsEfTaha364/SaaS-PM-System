@@ -12,7 +12,7 @@ class TaskActivity extends Model
         return $this->belongsTo(User::class);
     }
     public function task(){
-        return $this->belongsTo(task::class);
+        return $this->belongsTo(Task::class);
     }
 
      protected $casts = [
