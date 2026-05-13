@@ -49,31 +49,42 @@
     @endif
 
     <!-- Kanban Board -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6" x-data="kanbanBoard()">
         @foreach (['todo' => 'To Do', 'in_progress' => 'In Progress', 'done' => 'Done'] as $status => $statusLabel)
-            <div class="bg-gray-50 rounded-2xl p-4">
-                <h3 class="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4">{{ $statusLabel }}</h3>
-                <div class="space-y-4">
+            <div class="bg-gray-50 rounded-2xl p-4 flex flex-col h-full">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-sm font-bold text-gray-500 uppercase tracking-wider">{{ $statusLabel }}</h3>
+                    <span class="bg-gray-200 text-gray-600 py-0.5 px-2 rounded-full text-xs font-bold">{{ $project->tasks->where('status', $status)->count() }}</span>
+                </div>
+                
+                <div class="space-y-4 flex-1 kanban-column min-h-[150px]" data-status="{{ $status }}">
                     @forelse ($project->tasks->where('status', $status) as $task)
-                        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-                            <a href="{{ route('projects.tasks.show', [$project, $task]) }}" class="font-semibold text-gray-800 hover:text-indigo-600">{{ $task->title }}</a>
-                            <p class="text-sm text-gray-600 mt-1">{{ Str::limit($task->description, 50) }}</p>
-                            <div class="flex justify-between items-center mt-3">
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 cursor-grab active:cursor-grabbing hover:border-indigo-300 transition-colors kanban-item" data-id="{{ $task->id }}">
+                            <a href="{{ route('projects.tasks.show', [$project, $task]) }}" class="font-semibold text-gray-800 hover:text-indigo-600 block mb-2">{{ $task->title }}</a>
+                            <p class="text-sm text-gray-500 mb-4 line-clamp-2">{{ $task->description }}</p>
+                            
+                            <div class="flex justify-between items-center mt-auto">
                                 <div class="flex items-center -space-x-2">
                                     @foreach ($task->users->take(3) as $user)
-                                        <div class="w-7 h-7 rounded-full bg-indigo-100 text-indigo-600 text-xs flex items-center justify-center border-2 border-white" title="{{ $user->name }}">
+                                        <div class="w-7 h-7 rounded-full bg-indigo-100 text-indigo-600 text-xs flex items-center justify-center border-2 border-white font-bold" title="{{ $user->name }}">
                                             {{ strtoupper(substr($user->name, 0, 2)) }}
                                         </div>
                                     @endforeach
                                     @if($task->users->count() > 3)
-                                        <div class="w-7 h-7 rounded-full bg-gray-200 text-gray-600 text-xs flex items-center justify-center border-2 border-white">+{{ $task->users->count() - 3 }}</div>
+                                        <div class="w-7 h-7 rounded-full bg-gray-200 text-gray-600 text-xs flex items-center justify-center border-2 border-white font-bold">+{{ $task->users->count() - 3 }}</div>
                                     @endif
                                 </div>
-                                <span class="text-xs text-gray-500">{{ $task->due_date ? \Carbon\Carbon::parse($task->due_date)->format('M d') : '' }}</span>
+                                
+                                @if($task->due_date)
+                                    <div class="flex items-center text-xs font-medium text-gray-500 bg-gray-50 px-2 py-1 rounded-md">
+                                        <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                                        {{ \Carbon\Carbon::parse($task->due_date)->format('M d') }}
+                                    </div>
+                                @endif
                             </div>
                         </div>
                     @empty
-                        <p class="text-sm text-gray-500 italic px-2">No tasks in this column.</p>
+                        <div class="hidden empty-placeholder"></div>
                     @endforelse
                 </div>
             </div>
@@ -124,4 +135,51 @@
             </div>
         </form>
     </x-modal>
+@endpush
+
+@push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+<script>
+    function kanbanBoard() {
+        return {
+            init() {
+                const columns = document.querySelectorAll('.kanban-column');
+                columns.forEach(col => {
+                    new Sortable(col, {
+                        group: 'kanban', // set both lists to same group
+                        animation: 150,
+                        ghostClass: 'bg-indigo-50',
+                        onEnd: (evt) => {
+                            const itemEl = evt.item;  // dragged HTMLElement
+                            const toCol = evt.to;    // target list
+                            
+                            const taskId = itemEl.getAttribute('data-id');
+                            const newStatus = toCol.getAttribute('data-status');
+                            const userId = '{{ Auth::id() }}';
+                            
+                            // Send AJAX request to update status
+                            fetch(`/tasks/${taskId}/users/${userId}/status`, {
+                                method: 'PATCH',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                                    'Accept': 'application/json'
+                                },
+                                body: JSON.stringify({ status: newStatus })
+                            })
+                            .then(response => response.json())
+                            .then(data => {
+                                console.log('Status updated:', data);
+                            })
+                            .catch((error) => {
+                                console.error('Error:', error);
+                                // Revert position if needed
+                            });
+                        },
+                    });
+                });
+            }
+        }
+    }
+</script>
 @endpush

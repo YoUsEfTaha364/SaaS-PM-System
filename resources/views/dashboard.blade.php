@@ -27,23 +27,76 @@
     @if ($workspacesCount > 0)
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <!-- My Tasks -->
+            <!-- My Tasks -->
             <div class="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-                <h3 class="text-lg font-semibold text-gray-800 mb-4">My Tasks</h3>
-                <div class="space-y-4">
-                    @forelse ($myTasks as $task)
-                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                            <div>
-                                <a href="{{ route('projects.tasks.show', [$task->project, $task]) }}" class="font-medium text-gray-800 hover:text-indigo-600">{{ $task->title }}</a>
-                                <p class="text-sm text-gray-500">{{ $task->project->name }}</p>
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-lg font-bold text-gray-800">My Tasks</h3>
+                    <a href="{{ route('tasks.index') }}" class="text-sm font-medium text-indigo-600 hover:text-indigo-700">View All</a>
+                </div>
+                
+                <div class="space-y-6">
+                    @if($overdueTasks->count() > 0)
+                        <div>
+                            <h4 class="text-xs font-bold text-red-500 uppercase tracking-wider mb-3">Overdue</h4>
+                            <div class="space-y-3">
+                                @foreach($overdueTasks as $task)
+                                    <div class="flex items-center justify-between p-3 bg-red-50 rounded-lg border border-red-100 group">
+                                        <div>
+                                            <a href="{{ route('projects.tasks.show', [$task->project, $task]) }}" class="font-semibold text-gray-800 hover:text-indigo-600">{{ $task->title }}</a>
+                                            <p class="text-xs text-gray-500 mt-0.5">{{ $task->project->name }}</p>
+                                        </div>
+                                        <span class="text-xs font-medium px-2 py-1 bg-red-100 text-red-700 rounded-md">
+                                            {{ \Carbon\Carbon::parse($task->due_date)->format('M d') }}
+                                        </span>
+                                    </div>
+                                @endforeach
                             </div>
-                            <span class="text-xs font-medium px-2 py-1 rounded-full
-                                {{ $task->status == 'todo' ? 'bg-yellow-100 text-yellow-800' : ($task->status == 'in_progress' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800') }}">
-                                {{ str_replace('_', ' ', $task->status) }}
-                            </span>
                         </div>
-                    @empty
-                        <p class="text-sm text-gray-500 italic">You have no assigned tasks.</p>
-                    @endforelse
+                    @endif
+
+                    @if($dueTodayTasks->count() > 0)
+                        <div>
+                            <h4 class="text-xs font-bold text-yellow-600 uppercase tracking-wider mb-3">Due Today</h4>
+                            <div class="space-y-3">
+                                @foreach($dueTodayTasks as $task)
+                                    <div class="flex items-center justify-between p-3 bg-yellow-50 rounded-lg border border-yellow-100 group">
+                                        <div>
+                                            <a href="{{ route('projects.tasks.show', [$task->project, $task]) }}" class="font-semibold text-gray-800 hover:text-indigo-600">{{ $task->title }}</a>
+                                            <p class="text-xs text-gray-500 mt-0.5">{{ $task->project->name }}</p>
+                                        </div>
+                                        <span class="text-xs font-medium px-2 py-1 bg-yellow-100 text-yellow-700 rounded-md">
+                                            Today
+                                        </span>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endif
+
+                    @if($upcomingTasks->count() > 0)
+                        <div>
+                            <h4 class="text-xs font-bold text-blue-500 uppercase tracking-wider mb-3">Upcoming</h4>
+                            <div class="space-y-3">
+                                @foreach($upcomingTasks as $task)
+                                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-100 group">
+                                        <div>
+                                            <a href="{{ route('projects.tasks.show', [$task->project, $task]) }}" class="font-semibold text-gray-800 hover:text-indigo-600">{{ $task->title }}</a>
+                                            <p class="text-xs text-gray-500 mt-0.5">{{ $task->project->name }}</p>
+                                        </div>
+                                        <span class="text-xs font-medium px-2 py-1 bg-gray-100 text-gray-600 rounded-md">
+                                            {{ \Carbon\Carbon::parse($task->due_date)->format('M d') }}
+                                        </span>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endif
+
+                    @if($overdueTasks->count() == 0 && $dueTodayTasks->count() == 0 && $upcomingTasks->count() == 0)
+                        <div class="text-center py-6">
+                            <p class="text-sm text-gray-500 italic">You have no upcoming tasks.</p>
+                        </div>
+                    @endif
                 </div>
             </div>
 

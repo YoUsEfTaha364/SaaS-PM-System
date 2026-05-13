@@ -72,6 +72,8 @@ Route::controller(TaskController::class)->middleware("auth")->group(function () 
 
      Route::delete("/tasks/{task}/assignees/{user}", "deleteAssignee")->name("tasks.assignees.delete");
 
+     Route::patch("/tasks/{task}/update", "update")->name("tasks.update");
+
      Route::get("/projects/{project}/tasks/{task}", "view")->name("projects.tasks.show");
 
     // Route::get("/workspaces/{workspace}/projects/{project}", "show")->name("workspaces.projects.show");

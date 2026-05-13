@@ -79,6 +79,10 @@ class TaskController extends Controller
 
         $this->task_service->changeStatus($validated, $task, $user);
 
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json(['message' => 'Status changed successfully', 'status' => $validated['status']]);
+        }
+
         return redirect()->back()->with("change-status", "status changed successfully");
     }
 
@@ -96,5 +100,19 @@ class TaskController extends Controller
         $data = $this->task_service->getTaskViewData($project, $task);
 
         return view("tasks.show", $data);
+    }
+
+    public function update(Request $request, Task $task)
+    {
+        Gate::authorize('manageWorkspace', $task->project->workspace);
+
+        $validated = $request->validate([
+            'title' => 'required|string|max:255',
+            'description' => 'nullable|string'
+        ]);
+
+        $this->task_service->updateTask($validated, $task);
+
+        return redirect()->back()->with('update-task', 'Task updated successfully');
     }
 }

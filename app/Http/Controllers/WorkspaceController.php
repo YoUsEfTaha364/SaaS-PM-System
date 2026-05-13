@@ -60,8 +60,8 @@ class WorkspaceController extends Controller
             abort(403);
         }
 
-        $workspace = $this->workspaceService->getWorkspaceViewData($workspace);
+        $data = $this->workspaceService->getWorkspaceViewData($workspace);
 
-        return view('workspaces.show', compact('workspace'));
+        return view('workspaces.show', $data);
     }
 }

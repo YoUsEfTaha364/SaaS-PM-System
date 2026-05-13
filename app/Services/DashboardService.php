@@ -21,7 +21,23 @@ class DashboardService
         $tasksCount = $tasks->count();
         $completedTasksCount = (clone $tasks)->where('status', 'done')->count();
         
-        $myTasks = $user->tasks()->with('project')->latest()->take(5)->get();
+        $overdueTasks = $user->tasks()->with('project')
+            ->whereNotNull('due_date')
+            ->whereDate('due_date', '<', now()->toDateString())
+            ->where('status', '!=', 'done')
+            ->latest()->take(3)->get();
+            
+        $dueTodayTasks = $user->tasks()->with('project')
+            ->whereNotNull('due_date')
+            ->whereDate('due_date', now()->toDateString())
+            ->where('status', '!=', 'done')
+            ->latest()->take(3)->get();
+
+        $upcomingTasks = $user->tasks()->with('project')
+            ->whereNotNull('due_date')
+            ->whereDate('due_date', '>', now()->toDateString())
+            ->where('status', '!=', 'done')
+            ->orderBy('due_date', 'asc')->take(4)->get();
 
         $recentActivities = collect(); // Placeholder for recent activities
 
@@ -32,7 +48,9 @@ class DashboardService
             'projectsCount',
             'tasksCount',
             'completedTasksCount',
-            'myTasks',
+            'overdueTasks',
+            'dueTodayTasks',
+            'upcomingTasks',
             'recentActivities',
             'unreadNotificationsCount'
         );

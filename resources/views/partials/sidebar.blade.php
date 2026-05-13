@@ -19,11 +19,23 @@
         <a href="{{ route('dashboard') }}" class="block px-4 py-2.5 text-gray-700 rounded-md hover:bg-gray-100 {{ request()->routeIs('dashboard') ? 'bg-gray-100 font-semibold' : '' }}">
             Dashboard
         </a>
-        <a href="{{ route('workspaces.index') }}" class="block px-4 py-2.5 text-gray-700 rounded-md hover:bg-gray-100 {{ request()->routeIs('workspaces.*') ? 'bg-gray-100 font-semibold' : '' }}">
+        <a href="{{ route('tasks.index') }}" class="block px-4 py-2.5 text-gray-700 rounded-md hover:bg-gray-100 {{ request()->routeIs('tasks.*') ? 'bg-gray-100 font-semibold' : '' }}">
+            My Tasks
+        </a>
+        <a href="{{ route('workspaces.index') }}" class="block px-4 py-2.5 text-gray-700 rounded-md hover:bg-gray-100 {{ request()->routeIs('workspaces.*') && !request()->routeIs('workspaces.projects.*') ? 'bg-gray-100 font-semibold' : '' }}">
             Workspaces
         </a>
-        <a href="{{ route('tasks.index') }}" class="block px-4 py-2.5 text-gray-700 rounded-md hover:bg-gray-100 {{ request()->routeIs('tasks.*') ? 'bg-gray-100 font-semibold' : '' }}">
-            Tasks
+        <a href="{{ route('workspaces.projects.index') }}" class="block px-4 py-2.5 text-gray-700 rounded-md hover:bg-gray-100 {{ request()->routeIs('workspaces.projects.*') ? 'bg-gray-100 font-semibold' : '' }}">
+            Projects
+        </a>
+        <a href="{{ route('notifications.index') }}" class="flex items-center justify-between px-4 py-2.5 text-gray-700 rounded-md hover:bg-gray-100 {{ request()->routeIs('notifications.*') ? 'bg-gray-100 font-semibold' : '' }}">
+            <span>Notifications</span>
+            @php $unreadCount = auth()->user()->unreadNotifications->count() ?? 0; @endphp
+            @if($unreadCount > 0)
+                <span class="bg-indigo-100 text-indigo-600 py-0.5 px-2 rounded-full text-xs font-bold">
+                    {{ $unreadCount }}
+                </span>
+            @endif
         </a>
     </nav>
 </aside>

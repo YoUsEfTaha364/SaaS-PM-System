@@ -160,10 +160,6 @@ class TaskService
         });
 
 
-
-
-
-
         $data = [
             "task_id" => $task->id,
             "message" => 'You have beeen removed from ' . $task->title . " task",
@@ -193,6 +189,36 @@ class TaskService
         ]);
 
         return compact('project', 'task', 'members');
+    }
+
+    public function updateTask(array $validated_data, Task $task)
+    {
+        $oldValues = [
+            'title' => $task->title,
+            'description' => $task->description,
+        ];
+
+        DB::transaction(function () use ($validated_data, $task, $oldValues) {
+            $task->update([
+                'title' => $validated_data['title'],
+                'description' => $validated_data['description'],
+            ]);
+
+            // Add activity only if things changed
+            if ($oldValues['title'] !== $task->title || $oldValues['description'] !== $task->description) {
+                TaskActivity::create([
+                    "task_id" => $task->id,
+                    "user_id" => Auth::user()->id,
+                    "event" => "updated",
+                    "description" => "updated the task details",
+                    "old_values" => $oldValues,
+                    "new_values" => [
+                        'title' => $task->title,
+                        'description' => $task->description,
+                    ]
+                ]);
+            }
+        });
     }
 
     protected function uploadFile($file, $task_id)

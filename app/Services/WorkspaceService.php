@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\TaskActivity;
 use App\Models\Workspace;
 use Illuminate\Support\Facades\Auth;
 
@@ -45,8 +46,14 @@ class WorkspaceService
 
     public function getWorkspaceViewData(Workspace $workspace)
     {
-        return $workspace->load(['owner', 'users', 'projects' => function ($query) {
+        $workspace->load(['owner', 'users', 'projects' => function ($query) {
             $query->withCount('tasks');
         }]);
+
+        $activities = TaskActivity::whereHas('task.project', function ($q) use ($workspace) {
+            $q->where('workspace_id', $workspace->id);
+        })->with(['user', 'task.project'])->latest()->take(50)->get();
+
+        return compact('workspace', 'activities');
     }
 }
