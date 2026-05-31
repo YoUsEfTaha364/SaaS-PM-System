@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Validation\Rules;
 use App\Models\User;
-use App\Services\api\ApiResponseService;
+use App\Services\Api\ApiResponseService;
 
 class ApiAuthController extends Controller
 {
