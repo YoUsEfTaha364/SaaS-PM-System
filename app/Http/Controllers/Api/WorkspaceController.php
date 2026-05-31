@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\createWorkspaceRequest;
 use App\Http\Requests\UpdateWorkspaceRequest;
 use App\Models\Workspace;
-use App\Services\api\ApiResponseService;
+use App\Services\Api\ApiResponseService;
 use App\Services\WorkspaceService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
